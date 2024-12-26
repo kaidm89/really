@@ -1,181 +1,179 @@
-local PROG404 = {}
+local Library = {}
 
-function PROG404:CreateGUI()
+function Library:CreateGUI()
     local Players = game:GetService("Players")
     local LocalPlayer = Players.LocalPlayer
+    local UserInputService = game:GetService("UserInputService")
 
     -- العناصر الأساسية
     local screenGui = Instance.new("ScreenGui")
     local mainFrame = Instance.new("Frame")
     local header = Instance.new("Frame")
+    local titleLabel = Instance.new("TextLabel")
     local minimizeButton = Instance.new("TextButton")
     local closeButton = Instance.new("TextButton")
-    local restoreButton = Instance.new("TextButton")
-    local userImage = Instance.new("ImageButton")
-    local confirmationFrame = Instance.new("Frame")
-    local yesButton = Instance.new("TextButton")
-    local noButton = Instance.new("TextButton")
-    local tabsContainer = Instance.new("Frame")
-    local tabsList = Instance.new("ScrollingFrame")
-    local tabLine = Instance.new("Frame")
-    local userNameLabel = Instance.new("TextLabel")
+    local tabsFrame = Instance.new("Frame")
     local contentFrame = Instance.new("Frame")
-    local minimized = false
+    local notificationsFrame = Instance.new("Frame")
+    local profileFrame = Instance.new("Frame")
+    local profileImage = Instance.new("ImageLabel")
+    local profileName = Instance.new("TextLabel")
+    local tabButtons = {}
+    local activeTab = nil
+    local isDragging = false
+    local dragStart = nil
+    local startPos = nil
 
     -- إعداد ScreenGui
-    screenGui.Name = "PROG404_GUI"
+    screenGui.Name = "PROG-404"
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-    -- إعداد Frame الرئيسي
-    mainFrame.Size = UDim2.new(0, 800, 0, 600)
-    mainFrame.Position = UDim2.new(0.5, -400, 0.5, -300)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    mainFrame.Visible = false
+    -- إعداد Main Frame
+    mainFrame.Size = UDim2.new(0, 600, 0, 400)
+    mainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Active = true
+    mainFrame.Draggable = false
     mainFrame.Parent = screenGui
 
     -- إعداد Header
-    header.Size = UDim2.new(1, 0, 0, 40)
-    header.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    header.Size = UDim2.new(1, 0, 0, 30)
+    header.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     header.Parent = mainFrame
 
-    -- زر التصغير (-)
-    minimizeButton.Size = UDim2.new(0, 40, 1, 0)
-    minimizeButton.Position = UDim2.new(1, -120, 0, 0)
+    -- إعداد Title Label
+    titleLabel.Size = UDim2.new(0.8, 0, 1, 0)
+    titleLabel.Position = UDim2.new(0, 10, 0, 0)
+    titleLabel.Text = "PROG-404"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Parent = header
+
+    -- إعداد زر التصغير
+    minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+    minimizeButton.Position = UDim2.new(1, -60, 0, 0)
     minimizeButton.Text = "-"
     minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     minimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     minimizeButton.Parent = header
 
-    -- زر الإغلاق (X)
-    closeButton.Size = UDim2.new(0, 40, 1, 0)
-    closeButton.Position = UDim2.new(1, -40, 0, 0)
+    -- إعداد زر الإغلاق
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -30, 0, 0)
     closeButton.Text = "X"
     closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     closeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     closeButton.Parent = header
 
-    -- زر الاستعادة (+)
-    restoreButton.Size = UDim2.new(0, 40, 1, 0)
-    restoreButton.Position = UDim2.new(1, -80, 0, 0)
-    restoreButton.Text = "+"
-    restoreButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    restoreButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    restoreButton.Visible = false
-    restoreButton.Parent = header
+    -- إعداد Tabs Frame
+    tabsFrame.Size = UDim2.new(0, 150, 1, -30)
+    tabsFrame.Position = UDim2.new(0, 0, 0, 30)
+    tabsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    tabsFrame.Parent = mainFrame
 
-    -- إعداد tabsContainer
-    tabsContainer.Size = UDim2.new(0.2, 0, 1, -40)
-    tabsContainer.Position = UDim2.new(0, 0, 0, 40)
-    tabsContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    tabsContainer.Parent = mainFrame
-
-    -- إعداد قائمة التبويبات
-    tabsList.Size = UDim2.new(1, 0, 1, -40)
-    tabsList.CanvasSize = UDim2.new(0, 0, 2, 0)
-    tabsList.ScrollBarThickness = 4
-    tabsList.BackgroundTransparency = 1
-    tabsList.Parent = tabsContainer
-
-    -- خط تحت التبويبات
-    tabLine.Size = UDim2.new(1, 0, 0, 2)
-    tabLine.Position = UDim2.new(0, 0, 1, -2)
-    tabLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    tabLine.Parent = tabsContainer
-
-    -- إعداد اسم المستخدم
-    userNameLabel.Size = UDim2.new(1, 0, 0, 40)
-    userNameLabel.Position = UDim2.new(0, 0, 1, -40)
-    userNameLabel.Text = LocalPlayer.Name
-    userNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    userNameLabel.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    userNameLabel.TextScaled = true
-    userNameLabel.Parent = tabsContainer
-
-    -- إعداد صورة المستخدم
-    userImage.Size = UDim2.new(0, 50, 0, 50)
-    userImage.Position = UDim2.new(0, 10, 0, 10)
-    userImage.Image = "rbxassetid://0" -- صورة سوداء افتراضية
-    userImage.BackgroundTransparency = 1
-    userImage.Parent = screenGui
-
-    -- جعل الصورة دائرية مع ضباب أبيض
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = userImage
-
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = Color3.fromRGB(255, 255, 255)
-    uiStroke.Thickness = 2
-    uiStroke.Parent = userImage
-
-    -- إعداد نافذة التأكيد
-    confirmationFrame.Size = UDim2.new(0, 300, 0, 150)
-    confirmationFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
-    confirmationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    confirmationFrame.Visible = false
-    confirmationFrame.Parent = screenGui
-
-    local confirmationLabel = Instance.new("TextLabel")
-    confirmationLabel.Size = UDim2.new(1, 0, 0.6, 0)
-    confirmationLabel.Text = "هل أنت متأكد من حذف السكربت؟"
-    confirmationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    confirmationLabel.BackgroundTransparency = 1
-    confirmationLabel.Parent = confirmationFrame
-
-    yesButton.Size = UDim2.new(0.4, -10, 0.3, 0)
-    yesButton.Position = UDim2.new(0, 10, 0.7, 0)
-    yesButton.Text = "نعم"
-    yesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    yesButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    yesButton.Parent = confirmationFrame
-
-    noButton.Size = UDim2.new(0.4, -10, 0.3, 0)
-    noButton.Position = UDim2.new(0.6, 10, 0.7, 0)
-    noButton.Text = "لا"
-    noButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    noButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    noButton.Parent = confirmationFrame
-
-    -- إعداد إطار المحتوى
-    contentFrame.Size = UDim2.new(0.8, 0, 1, -40)
-    contentFrame.Position = UDim2.new(0.2, 0, 0, 40)
-    contentFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    -- إعداد Content Frame
+    contentFrame.Size = UDim2.new(1, -150, 1, -30)
+    contentFrame.Position = UDim2.new(0, 150, 0, 30)
+    contentFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     contentFrame.Parent = mainFrame
 
-    -- وظائف الأزرار
-    userImage.MouseButton1Click:Connect(function()
+    -- إعداد Notifications Frame
+    notificationsFrame.Size = UDim2.new(0, 300, 0, 50)
+    notificationsFrame.Position = UDim2.new(0.5, -150, 0, -60)
+    notificationsFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    notificationsFrame.Visible = false
+    notificationsFrame.Parent = screenGui
+
+    local notificationLabel = Instance.new("TextLabel")
+    notificationLabel.Size = UDim2.new(1, -20, 1, -10)
+    notificationLabel.Position = UDim2.new(0, 10, 0, 5)
+    notificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    notificationLabel.BackgroundTransparency = 1
+    notificationLabel.Text = ""
+    notificationLabel.Parent = notificationsFrame
+
+    -- إعداد Profile Frame
+    profileFrame.Size = UDim2.new(1, 0, 0, 80)
+    profileFrame.Position = UDim2.new(0, 0, 1, -80)
+    profileFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    profileFrame.Parent = tabsFrame
+
+    profileImage.Size = UDim2.new(0, 50, 0, 50)
+    profileImage.Position = UDim2.new(0, 10, 0.5, -25)
+    profileImage.Image = "rbxassetid://0" -- صورة افتراضية (GitHub)
+    profileImage.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    profileImage.Parent = profileFrame
+
+    profileName.Size = UDim2.new(1, -70, 1, 0)
+    profileName.Position = UDim2.new(0, 70, 0, 0)
+    profileName.Text = "User Name"
+    profileName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    profileName.BackgroundTransparency = 1
+    profileName.Parent = profileFrame
+
+    -- وظيفة الإشعارات
+    function Library:Notify(message)
+        notificationLabel.Text = message
+        notificationsFrame.Visible = true
+        wait(3)
+        notificationsFrame.Visible = false
+    end
+
+    -- وظيفة السحب والإفلات
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+        end
+    end)
+
+    header.InputChanged:Connect(function(input)
+        if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    header.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+        end
+    end)
+
+    -- وظيفة التصغير
+    minimizeButton.MouseButton1Click:Connect(function()
         mainFrame.Visible = not mainFrame.Visible
     end)
 
-    minimizeButton.MouseButton1Click:Connect(function()
-        if not minimized then
-            mainFrame:TweenSize(UDim2.new(0, 800, 0, 40), "Out", "Sine", 0.5, true)
-            minimizeButton.Visible = false
-            restoreButton.Visible = true
-            minimized = true
-        end
-    end)
-
-    restoreButton.MouseButton1Click:Connect(function()
-        if minimized then
-            mainFrame:TweenSize(UDim2.new(0, 800, 0, 600), "Out", "Sine", 0.5, true)
-            minimizeButton.Visible = true
-            restoreButton.Visible = false
-            minimized = false
-        end
-    end)
-
+    -- وظيفة الإغلاق
     closeButton.MouseButton1Click:Connect(function()
-        confirmationFrame.Visible = true
-    end)
-
-    yesButton.MouseButton1Click:Connect(function()
         screenGui:Destroy()
     end)
 
-    noButton.MouseButton1Click:Connect(function()
-        confirmationFrame.Visible = false
-    end)
+    -- إضافة Tabs
+    function Library:AddTab(tabName)
+        local tabButton = Instance.new("TextButton")
+        tabButton.Size = UDim2.new(1, 0, 0, 30)
+        tabButton.Text = tabName
+        tabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        tabButton.Parent = tabsFrame
+
+        tabButton.MouseButton1Click:Connect(function()
+            for _, button in pairs(tabButtons) do
+                button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            end
+            tabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            activeTab = tabName
+        end)
+
+        table.insert(tabButtons, tabButton)
+    end
+
+    return screenGui
 end
 
-PROG404:CreateGUI()
+return Library
