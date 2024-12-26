@@ -27,16 +27,4 @@ local Tab = window:CreateTab({
 
 Tab:SetName("New Tab Name")
 Tab:SetBackgroundColor(Color3.fromRGB(0, 255, 0))
-
-local button = Tab:CreateButton({
-    Name = "Button Name",
-    Text = "Click Me",
-    BackgroundColor = Color3.fromRGB(100, 100, 100),
-    TextColor = Color3.fromRGB(255, 255, 255)
-})
-
-button.OnClick = function()
-    print("Button Clicked!")
-end
-
 ```
