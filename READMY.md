@@ -4,7 +4,7 @@
 ```lua
  local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/PROG-404/really/refs/heads/main/PORG-404-LY.lua"))() 
 ```
-# WINDOW 
+# Add WINDOW 
 ```lua
 
 local window = Library:CreateWindow({
@@ -17,7 +17,7 @@ window:SetName("New Window Name")
 window:SetBackgroundColor(Color3.fromRGB(255, 0, 0))
 window:SetWaitingText("Please Wait...")
 ```
-# TAB
+# Add TAB
 ```lua
 local Tab = window:CreateTab({
     Name = "Tab Name",
@@ -28,7 +28,7 @@ local Tab = window:CreateTab({
 Tab:SetName("New Tab Name")
 Tab:SetBackgroundColor(Color3.fromRGB(0, 255, 0))
 ```
-# section
+# Add section
 
 ```lua
 
@@ -42,7 +42,7 @@ Section:SetName("New Section Name")
 Section:SetBackgroundColor(Color3.fromRGB(255, 0, 0))
 
 ```
-# SLIDR 
+# Add SLIDR 
 
 ```lua
 local Slider = Section:CreateSlider({
@@ -56,7 +56,7 @@ local Slider = Section:CreateSlider({
 })
 
 ```
-# BUTTON 
+# Add BUTTON 
 
 ```lua
 local Button = Section:CreateButton({
@@ -68,7 +68,7 @@ local Button = Section:CreateButton({
 
 ```
 
-# TOGGLES
+# Add TOGGLES
 
 ```lua
 local Toggle = Section:CreateToggle({
