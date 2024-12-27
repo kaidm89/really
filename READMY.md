@@ -6,7 +6,7 @@ Suitable for use: 🟢
 He has problems:🔴
 Trial version: 🟠
 ```
-# Library condition: 🟡
+# Library condition: ⚫
 
 
 # Lyabrary 
