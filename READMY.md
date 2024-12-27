@@ -1,11 +1,11 @@
  These are the PROG-404 library codes for programming scripts
-## Under update: 🟡
+Under update: 🟡
 Not available: ⚫
 Suitable for use: 🟢
 He has problems:🔴
 Trial version: 🟠
 
-#Library condition:
+# Library condition:
 
 
 # Lyabrary 
