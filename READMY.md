@@ -1,11 +1,12 @@
- These are the PROG-404 library codes for programming scripts
+These are the PROG-404 library codes for programming scripts
+```txt
 Under update: 🟡
 Not available: ⚫
 Suitable for use: 🟢
 He has problems:🔴
 Trial version: 🟠
-
-# Library condition:
+```
+# Library condition: 🟡
 
 
 # Lyabrary 
