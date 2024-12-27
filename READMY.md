@@ -93,6 +93,15 @@ Tab:AddDropdown({
 })
 
 ```
+# Adding a set of new Dropdown buttons to an existing menu
+```lua
+Dropdown:Refresh(List<table>,true)
+```
+# Selecting a dropdown option
+```lua
+Dropdown:Set("dropdown option")
+
+```
 # Notifying the user
 ```lua
 ProgLib:MakeNotification({
@@ -131,4 +140,83 @@ ColorPicker:Set(Color3.fromRGB(255,255,255))
 # Change Slider Value
 ```lua
 Slider:Set(2)
+```
+# Changing the value of an existing label 
+
+```lua
+CoolLabel:Set("Label New!")
+```
+
+# Creating a Label
+
+```lua
+Tab:AddLabel("Label")
+
+```
+
+# Creating a Paragraph
+
+```lua
+CoolParagraph:Set("Paragraph New!", "New Paragraph Content!")
+
+```
+
+# Creating an Adaptive Input
+
+```lua
+Tab:AddTextbox({
+	Name = "Textbox",
+	Default = "default box input",
+	TextDisappear = true,
+	Callback = function(Value)
+		print(Value)
+	end	  
+})
+
+```
+
+# Creating a Keybind
+
+```lua
+Tab:AddBind({
+	Name = "Bind",
+	Default = Enum.KeyCode.E,
+	Hold = false,
+	Callback = function()
+		print("press")
+	end    
+})
+
+```
+
+# Chaning the value of a bind
+
+```lua
+Bind:Set(Enum.KeyCode.E)
+```
+
+# Finishing your script (REQUIRED)
+
+```lua
+ProgLib:Init()
+
+```
+
+# How flags work
+
+```lua
+Tab1:AddToggle({
+    Name = "Toggle",
+    Default = true,
+    Save = true,
+    Flag = "toggle"
+})
+
+print(ProgLib.Flags["toggle"].Value) -- prints the value of the toggle.
+
+```
+# Destroying the Interface
+
+```lua
+ProgLib:Destroy()
 ```
