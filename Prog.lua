@@ -1,341 +1,379 @@
---[[ Orion-prog Pro Library v3.0 ]]
-local OrionPro = {
-    Version = "3.0.0",
-    Windows = {},
-    Cache = {},
-    Config = {
+-- OrionLib-ProgLib Advanced v2.0
+local OrionLib = {
+    Settings = {
+        ConfigVersion = "2.0.0",
         Theme = {
-            Main = Color3.fromRGB(20, 20, 20),
-            Secondary = Color3.fromRGB(25, 25, 25),
-            Accent = Color3.fromRGB(0, 150, 255),
-            AccentDark = Color3.fromRGB(0, 120, 205),
-            Border = Color3.fromRGB(50, 50, 50),
-            Text = Color3.fromRGB(255, 255, 255),
-            TextDark = Color3.fromRGB(175, 175, 175),
-            Error = Color3.fromRGB(255, 50, 50),
-            Success = Color3.fromRGB(50, 255, 100)
+            Default = {
+                Main = Color3.fromRGB(25, 25, 25),
+                Secondary = Color3.fromRGB(30, 30, 30),
+                Accent = Color3.fromRGB(0, 122, 255),
+                AccentDark = Color3.fromRGB(0, 98, 204),
+                TabBackground = Color3.fromRGB(35, 35, 35),
+                ElementBackground = Color3.fromRGB(40, 40, 40),
+                Text = Color3.fromRGB(255, 255, 255),
+                SubText = Color3.fromRGB(180, 180, 180),
+                PlaceholderText = Color3.fromRGB(120, 120, 120),
+                Border = Color3.fromRGB(60, 60, 60),
+                Hover = Color3.fromRGB(50, 50, 50),
+                Error = Color3.fromRGB(255, 64, 64),
+                Success = Color3.fromRGB(48, 208, 88)
+            },
+            Light = {
+                Main = Color3.fromRGB(240, 240, 240),
+                Secondary = Color3.fromRGB(250, 250, 250),
+                Accent = Color3.fromRGB(0, 122, 255),
+                AccentDark = Color3.fromRGB(0, 98, 204),
+                TabBackground = Color3.fromRGB(245, 245, 245),
+                ElementBackground = Color3.fromRGB(255, 255, 255),
+                Text = Color3.fromRGB(0, 0, 0),
+                SubText = Color3.fromRGB(80, 80, 80),
+                PlaceholderText = Color3.fromRGB(120, 120, 120),
+                Border = Color3.fromRGB(200, 200, 200),
+                Hover = Color3.fromRGB(245, 245, 245),
+                Error = Color3.fromRGB(255, 64, 64),
+                Success = Color3.fromRGB(48, 208, 88)
+            }
         },
-        Effects = {
-            BlurSize = 12,
-            Transparency = 0.98,
-            AnimationDuration = 0.2,
-            AnimationEasing = Enum.EasingStyle.Quad
+        Animation = {
+            TweenSpeed = 0.2,
+            EasingStyle = Enum.EasingStyle.Quart,
+            EasingDirection = Enum.EasingDirection.Out
         },
-        Keybind = Enum.KeyCode.RightControl,
-        AutoSave = true,
-        SaveFolder = "OrionPro",
-        UseBlur = true,
-        CustomFont = nil
-    }
+        Window = {
+            Size = Vector2.new(600, 400),
+            MinSize = Vector2.new(400, 300),
+            Position = UDim2.new(0.5, -300, 0.5, -200),
+            Draggable = true,
+            Resizable = true
+        },
+        Storage = {
+            UseDataStore = false, -- إذا كان true سيتم استخدام DataStore بدلاً من writefile
+            FolderName = "OrionLib",
+            FileName = "config.json"
+        }
+    },
+    Elements = {},
+    Themes = {},
+    Windows = {},
+    Connections = {},
+    Flags = {},
+    ActiveKeybinds = {},
+    ToggleKey = Enum.KeyCode.RightShift
 }
 
 -- Services
 local Services = {
-    Players = game:GetService("Players"),
     RunService = game:GetService("RunService"),
     TweenService = game:GetService("TweenService"),
     UserInputService = game:GetService("UserInputService"),
-    TextService = game:GetService("TextService"),
     HttpService = game:GetService("HttpService"),
+    Players = game:GetService("Players"),
     CoreGui = game:GetService("CoreGui"),
-    Lighting = game:GetService("Lighting")
+    TextService = game:GetService("TextService")
 }
 
--- Localization
+-- Local Player
 local LocalPlayer = Services.Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-local Camera = workspace.CurrentCamera
-local ViewportSize = Camera.ViewportSize
 
 -- Utilities
-local Util = {}
+local Utilities = {}
 
--- Tween System
-function Util.Tween(object, properties, duration, style, direction, repeatCount, reverses, delay)
-    if not object or typeof(properties) ~= "table" then return end
+function Utilities.Create(class, properties, children)
+    local instance = Instance.new(class)
+    
+    for property, value in pairs(properties or {}) do
+        if property ~= "Parent" then
+            if typeof(value) == "table" and property ~= "Theme" then
+                instance[property] = value[1]
+                value[1].Changed:Connect(function(newValue)
+                    instance[property] = newValue
+                end)
+            else
+                instance[property] = value
+            end
+        end
+    end
+    
+    for _, child in ipairs(children or {}) do
+        child.Parent = instance
+    end
+    
+    if properties and properties.Parent then
+        instance.Parent = properties.Parent
+    end
+    
+    return instance
+end
+
+function Utilities.Tween(instance, properties, duration, style, direction)
+    if not instance or not properties then return end
     
     local tweenInfo = TweenInfo.new(
-        duration or OrionPro.Config.Effects.AnimationDuration,
-        style or OrionPro.Config.Effects.AnimationEasing,
-        direction or Enum.EasingDirection.Out,
-        repeatCount or 0,
-        reverses or false,
-        delay or 0
+        duration or OrionLib.Settings.Animation.TweenSpeed,
+        style or OrionLib.Settings.Animation.EasingStyle,
+        direction or OrionLib.Settings.Animation.EasingDirection
     )
     
-    local tween = Services.TweenService:Create(object, tweenInfo, properties)
+    local tween = Services.TweenService:Create(instance, tweenInfo, properties)
     tween:Play()
+    
     return tween
 end
 
--- Enhanced Dragging System
-function Util.Draggable(frame, handle)
-    local dragToggle, dragInput, dragStart, startPos, updatePosition
-    
-    handle = handle or frame
-    
-    local function update(input)
-        local delta = input.Position - dragStart
-        local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                                 startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        
-        Util.Tween(frame, {Position = position}, 0.1)
-    end
-    
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragToggle = true
-            dragStart = input.Position
-            startPos = frame.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragToggle = false
-                end
-            end)
-        end
-    end)
-    
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    
-    Services.UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragToggle then
-            update(input)
-        end
-    end)
+function Utilities.GetTextBounds(text, font, size)
+    return Services.TextService:GetTextSize(text, size, font, Vector2.new(math.huge, math.huge))
 end
 
--- Ripple Effect
-function Util.CreateRipple(parent, config)
-    config = config or {}
-    local ripple = Instance.new("Frame")
-    local UICorner = Instance.new("UICorner")
-    
-    ripple.Name = "Ripple"
-    ripple.AnchorPoint = Vector2.new(0.5, 0.5)
-    ripple.BackgroundColor3 = config.Color or Color3.fromRGB(255, 255, 255)
-    ripple.BackgroundTransparency = config.StartTransparency or 0.7
-    ripple.BorderSizePixel = 0
-    ripple.Position = UDim2.fromOffset(Mouse.X - parent.AbsolutePosition.X, Mouse.Y - parent.AbsolutePosition.Y)
-    ripple.Size = UDim2.fromOffset(0, 0)
-    ripple.Parent = parent
-    ripple.ZIndex = parent.ZIndex + 1
-    
-    UICorner.CornerRadius = UDim.new(0.5, 0)
-    UICorner.Parent = ripple
-    
-    local targetSize = math.max(parent.AbsoluteSize.X, parent.AbsoluteSize.Y) * 2
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    
-    local sizeTween = Services.TweenService:Create(ripple, tweenInfo, {
-        Size = UDim2.fromOffset(targetSize, targetSize),
-        Position = UDim2.fromOffset(Mouse.X - parent.AbsolutePosition.X - targetSize/2, 
-                                  Mouse.Y - parent.AbsolutePosition.Y - targetSize/2),
-        BackgroundTransparency = 1
-    })
-    
-    sizeTween:Play()
-    sizeTween.Completed:Connect(function()
+function Utilities.GetMouseLocation()
+    return Services.UserInputService:GetMouseLocation()
+end
+
+function Utilities.RippleEffect(button, rippleColor)
+    spawn(function()
+        local ripple = Utilities.Create("Frame", {
+            Name = "Ripple",
+            Parent = button,
+            BackgroundColor3 = rippleColor or Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 0.8,
+            BorderSizePixel = 0,
+            ZIndex = button.ZIndex + 1,
+            AnchorPoint = Vector2.new(0.5, 0.5)
+        })
+        
+        local mousePos = Utilities.GetMouseLocation()
+        local startPos = Vector2.new(
+            mousePos.X - button.AbsolutePosition.X,
+            mousePos.Y - button.AbsolutePosition.Y
+        )
+        
+        ripple.Position = UDim2.new(0, startPos.X, 0, startPos.Y)
+        
+        local size = math.max(button.AbsoluteSize.X, button.AbsoluteSize.Y) * 2
+        local appearTween = Utilities.Tween(ripple, {
+            Size = UDim2.new(0, size, 0, size),
+            BackgroundTransparency = 1
+        }, 0.5)
+        
+        appearTween.Completed:Wait()
         ripple:Destroy()
     end)
 end
 
--- Enhanced Window Creation System
-function OrionPro:CreateWindow(config)
-    config = config or {}
-    local Window = {
-        Tabs = {},
-        ActiveTab = nil,
-        Minimized = false,
-        Hidden = false,
-        Cache = {}
+-- Сохранение и загрузка конфигурации
+function OrionLib:SaveConfig(name)
+    local config = {
+        Version = self.Settings.ConfigVersion,
+        Flags = {},
+        Window = {
+            Position = self.MainWindow and {
+                X = self.MainWindow.Position.X.Scale,
+                Y = self.MainWindow.Position.Y.Scale,
+                OffsetX = self.MainWindow.Position.X.Offset,
+                OffsetY = self.MainWindow.Position.Y.Offset
+            }
+        }
     }
     
-    -- Main UI Creation
-    Window.Main = Instance.new("ScreenGui")
-    Window.Main.Name = "OrionProUI"
-    Window.Main.ResetOnSpawn = false
-    
-    -- Apply Protection
-    if syn and syn.protect_gui then
-        syn.protect_gui(Window.Main)
+    for flag, value in pairs(self.Flags) do
+        if type(value) == "table" and value.Save ~= false then
+            config.Flags[flag] = value.Value
+        end
     end
     
-    Window.Main.Parent = Services.CoreGui
+    local success, encoded = pcall(function()
+        return Services.HttpService:JSONEncode(config)
+    end)
     
-    -- Blur Effect
-    if OrionPro.Config.UseBlur then
-        local blur = Instance.new("BlurEffect")
-        blur.Size = 0
-        blur.Parent = Services.Lighting
-        Window.Cache.Blur = blur
-        
-        Util.Tween(blur, {Size = OrionPro.Config.Effects.BlurSize}, 0.5)
-    end
-    
-    -- Main Container
-    Window.Container = Instance.new("Frame")
-    Window.Container.Name = "MainContainer"
-    Window.Container.AnchorPoint = Vector2.new(0.5, 0.5)
-    Window.Container.BackgroundColor3 = OrionPro.Config.Theme.Main
-    Window.Container.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Window.Container.Size = UDim2.new(0, 600, 0, 400)
-    Window.Container.ClipsDescendants = true
-    Window.Container.Parent = Window.Main
-    
-    -- Apply Styles
-    local containerCorner = Instance.new("UICorner")
-    containerCorner.CornerRadius = UDim.new(0, 8)
-    containerCorner.Parent = Window.Container
-    
-    local containerStroke = Instance.new("UIStroke")
-    containerStroke.Color = OrionPro.Config.Theme.Border
-    containerStroke.Thickness = 1
-    containerStroke.Parent = Window.Container
-    
-    -- TopBar
-    local topBar = Instance.new("Frame")
-    topBar.Name = "TopBar"
-    topBar.BackgroundColor3 = OrionPro.Config.Theme.Secondary
-    topBar.Size = UDim2.new(1, 0, 0, 40)
-    topBar.Parent = Window.Container
-    
-    local topBarCorner = Instance.new("UICorner")
-    topBarCorner.CornerRadius = UDim.new(0, 8)
-    topBarCorner.Parent = topBar
-    
-    -- Title
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.BackgroundTransparency = 1
-    title.Position = UDim2.new(0, 15, 0, 0)
-    title.Size = UDim2.new(1, -130, 1, 0)
-    title.Font = OrionPro.Config.CustomFont or Enum.Font.GothamBold
-    title.Text = config.Title or "Orion Pro"
-    title.TextColor3 = OrionPro.Config.Theme.Text
-    title.TextSize = 14
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = topBar
-    
-    -- Control Buttons
-    local controlButtons = Instance.new("Frame")
-    controlButtons.Name = "ControlButtons"
-    controlButtons.BackgroundTransparency = 1
-    controlButtons.Position = UDim2.new(1, -110, 0, 0)
-    controlButtons.Size = UDim2.new(0, 100, 1, 0)
-    controlButtons.Parent = topBar
-    
-    local buttonLayout = Instance.new("UIListLayout")
-    buttonLayout.FillDirection = Enum.FillDirection.Horizontal
-    buttonLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    buttonLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    buttonLayout.Padding = UDim.new(0, 5)
-    buttonLayout.Parent = controlButtons
-    
-    -- Minimize Button
-    local minimizeButton = Instance.new("TextButton")
-    minimizeButton.Name = "MinimizeButton"
-    minimizeButton.BackgroundColor3 = OrionPro.Config.Theme.Accent
-    minimizeButton.Size = UDim2.new(0, 30, 0, 30)
-    minimizeButton.Position = UDim2.new(1, -95, 0, 5)
-    minimizeButton.Text = "-"
-    minimizeButton.TextColor3 = OrionPro.Config.Theme.Text
-    minimizeButton.TextSize = 20
-    minimizeButton.Font = Enum.Font.GothamBold
-    minimizeButton.Parent = controlButtons
-    
-    local minimizeCorner = Instance.new("UICorner")
-    minimizeCorner.CornerRadius = UDim.new(0, 6)
-    minimizeCorner.Parent = minimizeButton
-    
-    -- Close Button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.BackgroundColor3 = OrionPro.Config.Theme.Error
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -35, 0, 5)
-    closeButton.Text = "×"
-    closeButton.TextColor3 = OrionPro.Config.Theme.Text
-    closeButton.TextSize = 20
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Parent = controlButtons
-    
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 6)
-    closeCorner.Parent = closeButton
-    
-    -- Content Area
-    local content = Instance.new("Frame")
-    content.Name = "Content"
-    content.BackgroundTransparency = 1
-    content.Position = UDim2.new(0, 0, 0, 40)
-    content.Size = UDim2.new(1, 0, 1, -40)
-    content.Parent = Window.Container
-    
-    -- Tab Container
-    local tabContainer = Instance.new("Frame")
-    tabContainer.Name = "TabContainer"
-    tabContainer.BackgroundColor3 = OrionPro.Config.Theme.Secondary
-    tabContainer.Position = UDim2.new(0, 10, 0, 10)
-    tabContainer.Size = UDim2.new(0, 150, 1, -20)
-    tabContainer.Parent = content
-    
-    local tabContainerCorner = Instance.new("UICorner")
-    tabContainerCorner.CornerRadius = UDim.new(0, 6)
-    tabContainerCorner.Parent = tabContainer
-    
-    -- Tab List
-    local tabList = Instance.new("ScrollingFrame")
-    tabList.Name = "TabList"
-    tabList.BackgroundTransparency = 1
-    tabList.Position = UDim2.new(0, 5, 0, 5)
-    tabList.Size = UDim2.new(1, -10, 1, -10)
-    tabList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    tabList.ScrollBarThickness = 2
-    tabList.ScrollBarImageColor3 = OrionPro.Config.Theme.Border
-    tabList.Parent = tabContainer
-    
-    local tabListLayout = Instance.new("UIListLayout")
-    tabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    tabListLayout.Padding = UDim.new(0, 5)
-    tabListLayout.Parent = tabList
-    
-    -- Tab Content Container
-    local tabContent = Instance.new("Frame")
-    tabContent.Name = "TabContent"
-    tabContent.BackgroundTransparency = 1
-    tabContent.Position = UDim2.new(0, 170, 0, 10)
-    tabContent.Size = UDim2.new(1, -180, 1, -20)
-    tabContent.Parent = content
-    
-    -- Tab System
-    function Window:CreateTab(name, icon)
-        local Tab = {
-            Elements = {},
-            Containers = {}
-        }
-        
-        -- Continue with tab creation...
-        
-        return Tab
-    end
-    
-    -- Dragging System
-    Util.Draggable(Window.Container, topBar)
-    
-    -- Control Button Events
-    minimizeButton.MouseButton1Click:Connect(function()
-        Window.Minimized = not Window.Minimized
-        if Window.Minimized then
-            Util.Tween(Window.Container, {Size = UDim2.new(0, 600, 0, 40)}, 0.3)
+    if success then
+        if self.Settings.Storage.UseDataStore then
+            -- حفظ في DataStore
         else
-            Util.Tween(Window.Container, {Size = UDim2.new(0, 600, 0, 400)}, 0.3)
+            -- حفظ في ملف
+            local path = self.Settings.Storage.FolderName .. "/" .. (name or self.Settings.Storage.FileName)
+            writefile(path, encoded)
+        end
+        return true
+    end
+    return false
+end
+
+function OrionLib:LoadConfig(name)
+    local config
+    local success, content = pcall(function()
+        if self.Settings.Storage.UseDataStore then
+            -- قراءة من DataStore
+            return nil
+        else
+            -- قراءة من ملف
+            local path = self.Settings.Storage.FolderName .. "/" .. (name or self.Settings.Storage.FileName)
+            return readfile(path)
         end
     end)
     
-    closeButton.MouseButton1Click:Connect(function()
-        Util.Tween(Window.Container, {</antArtifact>
+    if success and content then
+        success, config = pcall(function()
+            return Services.HttpService:JSONDecode(content)
+        end)
+        
+        if success and config then
+            if config.Version == self.Settings.ConfigVersion then
+                -- تحديث الإعدادات
+                for flag, value in pairs(config.Flags) do
+                    if self.Flags[flag] then
+                        self.Flags[flag]:Set(value)
+                    end
+                end
+                
+                -- تحديث موقع النافذة
+                if config.Window and config.Window.Position and self.MainWindow then
+                    self.MainWindow.Position = UDim2.new(
+                        config.Window.Position.X,
+                        config.Window.Position.OffsetX,
+                        config.Window.Position.Y,
+                        config.Window.Position.OffsetY
+                    )
+                end
+                
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- إنشاء نافذة جديدة
+function OrionLib:CreateWindow(config)
+    config = config or {}
+    local Window = {
+        Tabs = {},
+        TabCount = 0,
+        ActiveTab = nil,
+        Minimized = false,
+        Dragging = false
+    }
+    
+    -- الواجهة الرئيسية
+    Window.Main = Utilities.Create("Frame", {
+        Name = "OrionLibWindow",
+        Parent = Services.CoreGui:FindFirstChild("OrionLib") or Utilities.Create("ScreenGui", {
+            Name = "OrionLib",
+            Parent = Services.CoreGui
+        }),
+        Size = UDim2.new(0, self.Settings.Window.Size.X, 0, self.Settings.Window.Size.Y),
+        Position = self.Settings.Window.Position,
+        BackgroundColor3 = self.Settings.Theme.Default.Main,
+        BorderSizePixel = 0,
+        Active = true,
+        ClipsDescendants = true
+    }, {
+        -- الإطار العلوي
+        Utilities.Create("Frame", {
+            Name = "TopBar",
+            Size = UDim2.new(1, 0, 0, 30),
+            BackgroundColor3 = self.Settings.Theme.Default.Secondary,
+            BorderSizePixel = 0
+        }, {
+            -- عنوان النافذة
+            Utilities.Create("TextLabel", {
+                Name = "Title",
+                Size = UDim2.new(1, -100, 1, 0),
+                Position = UDim2.new(0, 10, 0, 0),
+                BackgroundTransparency = 1,
+                Text = config.Title or "Orion Library",
+                TextColor3 = self.Settings.Theme.Default.Text,
+                TextSize = 14,
+                Font = Enum.Font.GothamBold,
+                TextXAlignment = Enum.TextXAlignment.Left
+            }),
+            -- أزرار التحكم
+            Utilities.Create("Frame", {
+                Name = "Controls",
+                Size = UDim2.new(0, 90, 1, 0),
+                Position = UDim2.new(1, -90, 0, 0),
+                BackgroundTransparency = 1
+            }, {
+                -- زر التصغير
+                Utilities.Create("TextButton", {
+                    Name = "Minimize",
+                    Size = UDim2.new(0, 30, 0, 30),
+                    BackgroundTransparency = 1,
+                    Text = "-",
+                    TextColor3 = self.Settings.Theme.Default.Text,
+                    TextSize = 20,
+                    Font = Enum.Font.GothamBold
+                }),
+                -- زر الإغلاق
+                Utilities.Create("TextButton", {
+                    Name = "Close",
+                    Size = UDim2.new(0, 30, 0, 30),
+                    Position = UDim2.new(1, -30, 0, 0),
+                    BackgroundTransparency = 1,
+                    Text = "×",
+                    TextColor3 = self.Settings.Theme.Default.Text,
+                    TextSize = 20,
+                    Font = Enum.Font.GothamBold
+                })
+            })
+        }),
+        -- حاوية التبويبات
+        Utilities.Create("Frame", {
+            Name = "TabContainer",
+            Size = UDim2.new(0, 150, 1, -30),
+            Position = UDim2.new(0, 0, 0, 30),
+            BackgroundColor3 = self.Settings.Theme.Default.TabBackground,
+            BorderSizePixel = 0
+        }, {
+            -- قائمة التبويبات
+            Utilities.Create("ScrollingFrame", {
+                Name = "TabList",
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                ScrollBarThickness = 2,
+                ScrollBarImageColor3 = self.Settings.Theme.Default.Border,
+                CanvasSize = UDim2.new(0, 0, 0, 0)
+            }, {
+                Utilities.Create("UIListLayout", {
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, 5)
+                })
+            })
+        }),
+        -- حاوية المحتوى
+        Utilities.Create("Frame", {
+            Name = "ContentContainer",
+            Size = UDim2.new(1, -160, 1, -40),
+            Position = UDim2.new(0, 155, 0, 35),
+            BackgroundTransparency = 1,
+            ClipsDescendants = true
+        })
+    })
+    
+    -- تفعيل السحب
+    if self.Settings.Window.Draggable then
+        local dragging, dragInput, dragStart, startPos
+        
+        Window.Main.TopBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                dragStart = input.Position
+                startPos = Window.Main.Position
+                Window.Dragging = true
+                
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                        Window.Dragging = false
+                    end
+                end)
+            end
+        end)
+        
+        Window.Main.TopBar.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                dragInput = input
+            end
+        end)
+        
+        Services.UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
