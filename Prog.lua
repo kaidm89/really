@@ -1,4 +1,4 @@
---[[ Orion Pro Library v3.0 ]]
+--[[ Orion-prog Pro Library v3.0 ]]
 local OrionPro = {
     Version = "3.0.0",
     Windows = {},
